@@ -64,13 +64,6 @@ class MainActivity : AppCompatActivity() {
         return movies[randomIndex]
     }
 
-    private fun getTimerDuration(): Long {
-        val timerDurationEditText: EditText = findViewById(R.id.timer_duration_edit_text)
-        val durationInSeconds = timerDurationEditText.text.toString().toLongOrNull() ?: 60
-        return durationInSeconds
-    }
-
-
     private fun startTimer(
         timerTextView: TextView
     ): CountDownTimer {
@@ -90,12 +83,10 @@ class MainActivity : AppCompatActivity() {
             }
         }.start()
     }
+
+    private fun getTimerDuration(): Long {
+        val timerDurationEditText: EditText = findViewById(R.id.timer_duration_edit_text)
+        val durationInSeconds = timerDurationEditText.text.toString().toLongOrNull() ?: 60
+        return durationInSeconds
+    }
 }
-
-
-
-
-
-
-
-
