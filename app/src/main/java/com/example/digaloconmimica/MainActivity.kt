@@ -1,8 +1,15 @@
 package com.example.digaloconmimica
 
+import android.animation.ArgbEvaluator
+import android.animation.ValueAnimator
 import android.app.AlertDialog
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -11,8 +18,9 @@ import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,7 +50,7 @@ class MainActivity : AppCompatActivity() {
         "El club de la pelea",
         "El origen",
         "Memento",
-        "El sexto sentido",
+        "Sexto sentido",
         "El gran dictador",
         "El ciudadano Kane",
         "Taxi Driver",
@@ -50,7 +58,6 @@ class MainActivity : AppCompatActivity() {
         "La vida es bella",
         "El curioso caso de Benjamin Button",
         "El show de Truman",
-        "El león rey",
         "La naranja mecánica",
         "El bueno, el malo y el feo",
         "Náufrago",
@@ -110,24 +117,31 @@ class MainActivity : AppCompatActivity() {
         "El perfecto asesino",
         "La ventana secreta",
         "Star Wars",
-        "El corazón del ángel",)
-
+        "El corazón del ángel",
+    )
 
     private lateinit var timerTextView: TextView
     private lateinit var generateMovieButton: Button
     private lateinit var stopTimerButton: Button
     private lateinit var settingsLayout: LinearLayout
+    private lateinit var settingsShow: TextView
     private lateinit var redScoreTextView: TextView
     private lateinit var blueScoreTextView: TextView
+    private lateinit var mediaPlayer: MediaPlayer
+    private val defaultBackgroundColor = Color.BLACK // Replace with your desired default background color
+
+
 
     private var countDownTimer: CountDownTimer? = null
     private var selectedTeam = ""
     private var redTeamScore = 0
     private var blueTeamScore = 0
+    private var colorAnimator: ValueAnimator? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
 
         timerTextView = findViewById(R.id.timer_text_view)
         generateMovieButton = findViewById(R.id.generate_movie_button)
@@ -136,11 +150,14 @@ class MainActivity : AppCompatActivity() {
         redScoreTextView = findViewById(R.id.red_score_text_view)
         blueScoreTextView = findViewById(R.id.blue_score_text_view)
 
+        mediaPlayer = MediaPlayer.create(this, R.raw.alarm_sound)
+        mediaPlayer.isLooping = false
         val movieTitleTextView: TextView = findViewById(R.id.movie_title_text_view)
         val timerDurationEditText: EditText = findViewById(R.id.timer_duration_edit_text)
         val saveSettingsButton: Button = findViewById(R.id.save_settings_button)
         val settingsIcon: ImageView = findViewById(R.id.settings_icon)
         settingsLayout = findViewById(R.id.settings_layout)
+        settingsShow = findViewById(R.id.settings_show)
 
         generateMovieButton.setOnClickListener {
             val randomMovie = getRandomMovie(movies)
@@ -158,13 +175,16 @@ class MainActivity : AppCompatActivity() {
 
         saveSettingsButton.setOnClickListener {
             settingsLayout.visibility = View.GONE
+            settingsShow.visibility = View.VISIBLE
         }
 
         settingsIcon.setOnClickListener {
             settingsLayout.visibility = View.VISIBLE
+            settingsShow.visibility = View.GONE
         }
 
         updateSelectedTeam()
+
     }
 
     private fun getRandomMovie(movies: List<String>): String {
@@ -172,34 +192,75 @@ class MainActivity : AppCompatActivity() {
         return movies[randomIndex]
     }
 
-    private fun startTimer(
-        timerTextView: TextView
-    ): CountDownTimer {
+    private fun startTimer(timerTextView: TextView): CountDownTimer {
         val durationInSeconds = getTimerDuration()
         val durationInMillis = durationInSeconds * 1000
+        val backgroundView: View = findViewById(R.id.background_view)
+
+        val colorFrom = Color.GREEN
+        val colorTo = Color.RED
+
+        colorAnimator = ValueAnimator.ofObject(ArgbEvaluator(), colorFrom, colorTo)
+        colorAnimator?.duration = durationInMillis
+        colorAnimator?.addUpdateListener { valueAnimator ->
+            val color = valueAnimator.animatedValue as Int
+            backgroundView.setBackgroundColor(color)
+        }
+
+
         return object : CountDownTimer(durationInMillis, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 val minutes = (millisUntilFinished / 1000) / 60
                 val seconds = (millisUntilFinished / 1000) % 60
                 timerTextView.text = String.format("%02d:%02d", minutes, seconds)
+                val remainingSeconds = (millisUntilFinished / 1000).toInt()
+                if (remainingSeconds == 10) {
+                    mediaPlayer.start()
+                }
             }
 
             override fun onFinish() {
                 timerTextView.text = "¡TIEMPO!"
                 stopTimerButton.visibility = View.GONE
                 generateMovieButton.visibility = View.VISIBLE
+                colorAnimator?.cancel()
+                val backgroundView: View? = findViewById(R.id.background_view)
+                if (backgroundView != null) {
+                    Log.d("MainActivity", "background_view found") // Add this line
+                    backgroundView.setBackgroundColor(Color.parseColor("#80000000"))
+                }
                 showResultDialog()
             }
-        }.start()
+        }.apply {
+            start()
+            colorAnimator?.start()
+        }
     }
 
+
     private fun stopTimer() {
+        Log.d("MainActivity", "stopTimer called")
         countDownTimer?.cancel()
+        mediaPlayer.stop()
+        mediaPlayer.reset()
+        mediaPlayer.setDataSource(this, Uri.parse("android.resource://$packageName/${R.raw.alarm_sound}"))
+        mediaPlayer.prepare()
         timerTextView.text = "00:00"
         generateMovieButton.visibility = View.VISIBLE
         stopTimerButton.visibility = View.GONE
+        colorAnimator?.cancel()
+
+        val backgroundView: View? = findViewById(R.id.background_view)
+        if (backgroundView != null) {
+            Log.d("MainActivity", "background_view found") // Add this line
+            backgroundView.setBackgroundColor(Color.parseColor("#80000000"))
+        } else {
+            Log.d("MainActivity", "background_view not found") // Add this line
+        }
+
         showResultDialog()
     }
+
 
     private fun showResultDialog() {
         val builder = AlertDialog.Builder(this)
@@ -216,8 +277,41 @@ class MainActivity : AppCompatActivity() {
         }
         builder.setNegativeButton("Incorrecto") { _, _ ->
             // Do nothing, score stays the same
+            showResultDialogDos()
         }
         builder.show()
+    }
+
+    private fun showResultDialogDos() {
+        val builderB = AlertDialog.Builder(this)
+        builderB.setTitle("Equipo Contrario")
+        builderB.setMessage("¿Adivinaron correctamente?")
+        builderB.setNegativeButton("Incorrecto") { _, _ ->
+            if (selectedTeam == "Rojo") {
+                blueTeamScore--
+
+            } else if (selectedTeam == "Azul") {
+                redTeamScore--
+            }
+            updateScore()
+        }
+        builderB.setPositiveButton("Correcto") { _, _ ->
+            // Update score for the correct team
+            if (selectedTeam == "Rojo") {
+                blueTeamScore++
+            } else if (selectedTeam == "Azul") {
+                redTeamScore++
+            }
+            updateScore()
+
+        }
+
+        builderB.setNeutralButton("Paso") { _, _ ->
+            // No hace nada y cierra el cuadro de diálogo
+        }
+
+        builderB.setCancelable(false)
+        builderB.show()
     }
 
     private fun updateSelectedTeam() {
@@ -244,3 +338,4 @@ class MainActivity : AppCompatActivity() {
         return durationInSeconds
     }
 }
+
