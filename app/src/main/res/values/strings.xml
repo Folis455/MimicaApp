@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">DigaloConMimica</string>
+    <string name="activity_title"></string>
 </resources>

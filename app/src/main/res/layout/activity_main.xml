@@ -29,7 +29,9 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:gravity="center"
+            android:clickable="true"
             android:text="Título"
+            android:textStyle="bold"
             android:padding="16dp"
             android:textSize="48sp" />
 
@@ -59,7 +61,7 @@
             android:orientation="horizontal"
             android:layout_alignParentBottom="true"
             android:gravity="center_vertical"
-            android:padding="16dp"
+            android:padding="32dp"
             android:visibility="gone">
 
             <EditText
@@ -95,12 +97,11 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:gravity="center"
-            android:text="Cambiar Tiempo de Ronda"
+            android:text="Timer"
             android:padding="10dp"
             android:layout_below="@+id/settings_icon"
             android:textSize="24sp"
             tools:ignore="NotSibling" />
-
 
 
 

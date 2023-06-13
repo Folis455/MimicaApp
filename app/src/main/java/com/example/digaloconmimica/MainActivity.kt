@@ -24,7 +24,7 @@ import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
 
-    private val movies = listOf(
+    private val movies = mutableListOf(
         "Titanic",
         "El Rey León",
         "La La Land",
@@ -130,7 +130,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mediaPlayer: MediaPlayer
     private val defaultBackgroundColor = Color.BLACK // Replace with your desired default background color
 
-
+    var timerStarted = false
+    var hiddenMovieTitle = ""
 
     private var countDownTimer: CountDownTimer? = null
     private var selectedTeam = ""
@@ -141,6 +142,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        supportActionBar?.title = ""
+        supportActionBar?.setDisplayShowCustomEnabled(true)
+        supportActionBar?.setCustomView(R.layout.action_bar_logo)
 
 
         timerTextView = findViewById(R.id.timer_text_view)
@@ -162,11 +167,24 @@ class MainActivity : AppCompatActivity() {
         generateMovieButton.setOnClickListener {
             val randomMovie = getRandomMovie(movies)
             movieTitleTextView.text = randomMovie
+            movies.remove(randomMovie)
             countDownTimer?.cancel()
-            countDownTimer = startTimer(timerTextView)
             settingsLayout.visibility = View.GONE
             generateMovieButton.visibility = View.GONE
             stopTimerButton.visibility = View.VISIBLE
+            settingsShow.visibility = View.VISIBLE
+            countDownTimer = startTimer(timerTextView)
+        }
+
+        movieTitleTextView.setOnClickListener {
+
+
+            if (movieTitleTextView.text == "Oculta") {
+                movieTitleTextView.text = hiddenMovieTitle
+            } else {
+                hiddenMovieTitle = movieTitleTextView.text.toString()
+                movieTitleTextView.text = "Oculta"
+            }
         }
 
         stopTimerButton.setOnClickListener {
@@ -176,9 +194,15 @@ class MainActivity : AppCompatActivity() {
         saveSettingsButton.setOnClickListener {
             settingsLayout.visibility = View.GONE
             settingsShow.visibility = View.VISIBLE
+            settingsIcon.visibility = View.VISIBLE
         }
 
         settingsIcon.setOnClickListener {
+            settingsLayout.visibility = View.VISIBLE
+            settingsShow.visibility = View.GONE
+        }
+
+        settingsShow.setOnClickListener {
             settingsLayout.visibility = View.VISIBLE
             settingsShow.visibility = View.GONE
         }
@@ -187,8 +211,11 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun getRandomMovie(movies: List<String>): String {
-        val randomIndex = (movies.indices).random()
+    fun getRandomMovie(movies: MutableList<String>): String {
+        if (movies.isEmpty()) {
+            return "¡Has jugado todas las películas, reinicia la app!"
+        }
+        val randomIndex = (0 until movies.size).random()
         return movies[randomIndex]
     }
 
